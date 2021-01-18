@@ -96,5 +96,7 @@ func (s *Scheduler) cleanup() {
 }
 
 func (s *Scheduler) WaitForWorkers() {
-	s.waitGroup.Wait()
+	if s.waitGroup != nil {
+		s.waitGroup.Wait()
+	}
 }
