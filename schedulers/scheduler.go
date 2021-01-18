@@ -1,6 +1,7 @@
 package schedulers
 
 import (
+	"fmt"
 	"github.com/jake-hansen/jobs/consumers"
 	"github.com/jake-hansen/jobs/jobs"
 	"sync"
@@ -27,10 +28,13 @@ func DefaultScheduler() *Scheduler {
 }
 
 func runWorker(worker jobs.Worker, dataChannel chan interface{}, errorChannel chan error, wg *sync.WaitGroup) {
+	fmt.Printf("[DEBUG] starting worker %s\n", worker.WorkerName())
 	defer wg.Done()
 	val, err := worker.Run()
 	dataChannel <- val
 	errorChannel <- err
+	fmt.Printf("[DEBUG] ended worker %s\n", worker.WorkerName())
+
 }
 
 func (s *Scheduler) Schedule(job *jobs.Job) {
@@ -67,6 +71,6 @@ func (s *Scheduler) closeChannels() {
 	close(s.errorChannel)
 }
 
-func (s *Scheduler) WaitForWorkers()  {
+func (s *Scheduler) WaitForWorkers() {
 	s.waitGroup.Wait()
 }

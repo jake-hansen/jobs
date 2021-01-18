@@ -2,7 +2,8 @@ package jobs
 
 // Worker represents an atomic task that needs to be executed.
 type Worker interface {
-	Run()	(interface{}, error)
+	Run() (interface{}, error)
+	WorkerName() string
 }
 
 // Job represents a collection of workers that need to be scheduled.
@@ -18,8 +19,3 @@ func NewJob(name string, workers *[]Worker) *Job {
 		Workers: workers,
 	}
 }
-
-
-
-
-

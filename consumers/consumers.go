@@ -13,17 +13,17 @@ type ErrorConsumer interface {
 }
 
 // DataPrinterConsumer is a consumer that prints data.
-type DataPrinterConsumer struct {}
+type DataPrinterConsumer struct{}
 
 // ErrorPrinterConsumer is a consumer that prints an error.
-type ErrorPrinterConsumer struct {}
+type ErrorPrinterConsumer struct{}
 
 func (d DataPrinterConsumer) Consume(i interface{}) {
-	fmt.Printf("value %d\n", i)
+	fmt.Printf("worker value received: %v\n", i)
 }
 
 func (e ErrorPrinterConsumer) Consume(err error) {
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("worker error: %s", err.Error())
 	}
 }

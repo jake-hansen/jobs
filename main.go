@@ -9,11 +9,11 @@ import (
 )
 
 type MyWorker struct {
-	duration	time.Duration
-	name		string
+	duration time.Duration
+	name     string
 }
 
-func main()  {
+func main() {
 
 	worker1 := NewWorker(5, "1")
 	worker2 := NewWorker(2, "2")
@@ -37,8 +37,9 @@ func NewWorker(seconds int, name string) *MyWorker {
 func (m *MyWorker) Run() (interface{}, error) {
 	rand.Seed(time.Now().UnixNano())
 	time.Sleep(m.duration)
-	fmt.Printf("task %s complete\n", m.name)
 	return rand.Intn(100), nil
 }
 
-
+func (m *MyWorker) WorkerName() string {
+	return m.name
+}
