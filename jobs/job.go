@@ -4,6 +4,7 @@ package jobs
 type Worker interface {
 	Run() (interface{}, error)
 	WorkerName() string
+	GetPriority() interface{}
 }
 
 // Job represents a collection of workers that need to be scheduled.

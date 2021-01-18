@@ -43,3 +43,8 @@ func (m *MyWorker) Run() (interface{}, error) {
 func (m *MyWorker) WorkerName() string {
 	return m.name
 }
+
+func (m *MyWorker) GetPriority() interface{} {
+	return 0
+}
+

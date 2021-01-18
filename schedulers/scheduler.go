@@ -13,6 +13,7 @@ type Scheduler struct {
 	waitGroup     sync.WaitGroup
 	DataConsumer  consumers.DataConsumer
 	ErrorConsumer consumers.ErrorConsumer
+	Algorithm     SchedulerAlgorithm
 }
 
 func DefaultScheduler() *Scheduler {
@@ -22,6 +23,7 @@ func DefaultScheduler() *Scheduler {
 		waitGroup:     sync.WaitGroup{},
 		DataConsumer:  consumers.DataPrinterConsumer{},
 		ErrorConsumer: consumers.ErrorPrinterConsumer{},
+		Algorithm:     SequentialScheduler{},
 	}
 
 	return scheduler
@@ -37,12 +39,22 @@ func runWorker(worker jobs.Worker, dataChannel chan interface{}, errorChannel ch
 
 }
 
+type SchedulerAlgorithm interface {
+	Schedule(workers *[]jobs.Worker) *[]jobs.Worker
+}
+
+type SequentialScheduler struct{}
+
+func (s SequentialScheduler) Schedule(workers *[]jobs.Worker) *[]jobs.Worker {
+	return workers
+}
+
 func (s *Scheduler) Schedule(job *jobs.Job) {
 	if job != nil {
 		s.dataChannel = make(chan interface{})
 		s.errorChannel = make(chan error)
 
-		for _, worker := range *job.Workers {
+		for _, worker := range *s.Algorithm.Schedule(job.Workers) {
 			s.waitGroup.Add(1)
 			go runWorker(worker, s.dataChannel, s.errorChannel, &s.waitGroup)
 		}
