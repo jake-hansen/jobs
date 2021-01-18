@@ -1,6 +1,7 @@
 package schedulers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/jake-hansen/jobs/consumers"
 	"github.com/jake-hansen/jobs/jobs"
@@ -10,17 +11,18 @@ import (
 type Scheduler struct {
 	dataChannel   chan interface{}
 	errorChannel  chan error
-	waitGroup     sync.WaitGroup
+	waitGroup     *sync.WaitGroup
 	DataConsumer  consumers.DataConsumer
 	ErrorConsumer consumers.ErrorConsumer
 	Algorithm     SchedulerAlgorithm
+	jobInProgress bool
 }
 
 func DefaultScheduler() *Scheduler {
 	scheduler := &Scheduler{
 		dataChannel:   nil,
 		errorChannel:  nil,
-		waitGroup:     sync.WaitGroup{},
+		waitGroup:     nil,
 		DataConsumer:  consumers.DataPrinterConsumer{},
 		ErrorConsumer: consumers.ErrorPrinterConsumer{},
 		Algorithm:     SequentialScheduler{},
@@ -49,20 +51,29 @@ func (s SequentialScheduler) Schedule(workers *[]jobs.Worker) *[]jobs.Worker {
 	return workers
 }
 
-func (s *Scheduler) Schedule(job *jobs.Job) {
+func (s *Scheduler) Schedule(job *jobs.Job) error {
 	if job != nil {
-		s.dataChannel = make(chan interface{})
-		s.errorChannel = make(chan error)
+		if !s.jobInProgress {
+			s.waitGroup = new(sync.WaitGroup)
+			s.jobInProgress = true
+			s.dataChannel = make(chan interface{})
+			s.errorChannel = make(chan error)
 
-		for _, worker := range *s.Algorithm.Schedule(job.Workers) {
-			s.waitGroup.Add(1)
-			go runWorker(worker, s.dataChannel, s.errorChannel, &s.waitGroup)
+			for _, worker := range *s.Algorithm.Schedule(job.Workers) {
+				s.waitGroup.Add(1)
+				go runWorker(worker, s.dataChannel, s.errorChannel, s.waitGroup)
+			}
+
+			go s.consumeData()
+			go s.consumeErrors()
+			go s.cleanup()
+		} else {
+			return fmt.Errorf("scheduler: cannot schedule job [%s]. A job already in progress", job.Name)
 		}
-
-		go s.consumeData()
-		go s.consumeErrors()
-		go s.closeChannels()
+	} else {
+		return errors.New("scheduler: job cannot be nil")
 	}
+	return nil
 }
 
 func (s *Scheduler) consumeData() {
@@ -77,10 +88,11 @@ func (s *Scheduler) consumeErrors() {
 	}
 }
 
-func (s *Scheduler) closeChannels() {
+func (s *Scheduler) cleanup() {
 	s.waitGroup.Wait()
 	close(s.dataChannel)
 	close(s.errorChannel)
+	s.jobInProgress = false
 }
 
 func (s *Scheduler) WaitForWorkers() {
