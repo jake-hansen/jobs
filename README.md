@@ -24,11 +24,15 @@ To use Jobs, you need to install Go and set your Go workspace.
 
 1. To install Jobs, you'll need to run this command within your project.
    
-   `$ go get -u github.com/jake-hansen/jobs`
+   ```sh
+   $ go get -u github.com/jake-hansen/jobs
+   ```
 
 2. Import jobs in your project
 
-    `import "github.com/jake-hansen/jobs`
+    ```go
+    import "github.com/jake-hansen/jobs
+    ```
 
 ## Example
 
@@ -48,7 +52,7 @@ Our PiWorker is an implementation of a Worker. You'll see some helper functions 
 
 Where the magic happens is in the `Run()` function. You'll see that the function takes no parameters, but performs the Monte Carlo calculation using a k value which is provided in the struct.
 
-```
+```go
 type PiWorker struct {
 	Name        string
 	Priority    int
@@ -72,7 +76,7 @@ PiWorker, by itself, is not very useful. Sure, we can create a new PiWorker and 
 
 The next thing we need to do is define a Job. Remember that a Job is a *collection* of workers. So we will first need a collection of our PiWorkers. To do this, we'll create a helper function. This helper function will take a paramter, `n`, and return a slice of that many PiWorkers. Note that each PiWorker takes on a unique `KVal`. 
 
-```
+```go
 func createPiWorkers(n int) *[]jobs.Worker {
 	var piSlice []jobs.Worker
 	for i := 0; i <= n; i++ {
@@ -104,7 +108,7 @@ PiAddition, implements the DataConsumer interface by defining a function `Consum
 
 Our Consume function here takes in a paramter, `data`, checks to make sure the data is of type float64, and if it is, adds that value to our Pi sum. Note that the type checking here is important. 
 
-```
+```go
 type PiAddition struct {
 	Pi	float64
 }
@@ -124,7 +128,7 @@ In order to make sure our program doesn't exit until the last worker thread fini
 
 Finally, we print the Pi approximation stored in our consumer.
 
-```
+```go
 piScheduler := schedulers.DefaultScheduler()
 piConsumer := piAddition{Pi: 0}
 piScheduler.DataConsumer = &piConsumer
