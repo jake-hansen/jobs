@@ -1,12 +1,18 @@
 # Jobs
+[![Build Status](https://travis-ci.com/jake-hansen/jobs.svg?branch=main)](https://travis-ci.com/jake-hansen/jobs)
+![GitHub](https://img.shields.io/github/license/jake-hansen/jobs)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jake-hansen/jobs)](https://goreportcard.com/report/github.com/jake-hansen/jobs)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/jake-hansen/jobs)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/jake-hansen/jobs)
+
 Jobs is a simple asynchronous job scheduling library for Go. Jobs works by abstracting goroutines to a simple yet highly configurable job scheduling API. 
 
 ## Contents
 - [Jobs](#jobs)
-  - [Contents](#contents)
-  - [Intro](#intro)
-  - [Installation](#installation)
-  - [Example](#example)
+	- [Contents](#contents)
+	- [Intro](#intro)
+	- [Installation](#installation)
+	- [Example](#example)
 
 ## Intro
 
