@@ -1,3 +1,6 @@
+// Copyright © 2021 Jacob Hansen. All rights reserved.
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
+
 package jobs_test
 
 import (
