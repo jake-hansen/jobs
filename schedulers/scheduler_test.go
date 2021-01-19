@@ -2,14 +2,15 @@ package schedulers_test
 
 import (
 	"fmt"
-	"github.com/jake-hansen/jobs/consumers"
-	"github.com/jake-hansen/jobs/jobs"
-	"github.com/jake-hansen/jobs/schedulers"
-	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/jake-hansen/jobs/consumers"
+	"github.com/jake-hansen/jobs/jobs"
+	"github.com/jake-hansen/jobs/schedulers"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultScheduler(t *testing.T) {

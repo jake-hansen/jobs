@@ -3,9 +3,10 @@ package schedulers
 import (
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/jake-hansen/jobs/consumers"
 	"github.com/jake-hansen/jobs/jobs"
-	"sync"
 )
 
 // Scheduler manages scheduling and syncing Workers for a Job.
@@ -17,7 +18,7 @@ type Scheduler struct {
 	ErrorConsumer consumers.ErrorConsumer
 	Algorithm     SchedulerAlgorithm
 	jobInProgress bool
-	Debug		bool
+	Debug         bool
 }
 
 // DefaultScheduler creates a Scheduler with a DataPrinterConsumer and ErrorPrinterConsumer. It also includes the
@@ -30,7 +31,7 @@ func DefaultScheduler() *Scheduler {
 		DataConsumer:  consumers.DataPrinterConsumer{},
 		ErrorConsumer: consumers.ErrorPrinterConsumer{},
 		Algorithm:     SequentialScheduler{},
-		Debug: false,
+		Debug:         false,
 	}
 
 	return scheduler

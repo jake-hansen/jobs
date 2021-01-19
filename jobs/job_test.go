@@ -1,9 +1,10 @@
 package jobs_test
 
 import (
+	"testing"
+
 	"github.com/jake-hansen/jobs/jobs"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewJob(t *testing.T) {
@@ -22,7 +23,7 @@ func TestNewJob(t *testing.T) {
 	})
 }
 
-type testWorker struct {}
+type testWorker struct{}
 
 func (t testWorker) Run() (interface{}, error) {
 	return nil, nil
@@ -35,4 +36,3 @@ func (t testWorker) WorkerName() string {
 func (t testWorker) GetPriority() interface{} {
 	return 0
 }
-
