@@ -5,6 +5,7 @@ Jobs is a simple asynchronous job scheduling library for Go. Jobs works by abstr
 - [Jobs](#jobs)
   - [Contents](#contents)
   - [Intro](#intro)
+  - [Installation](#installation)
   - [Example](#example)
 
 ## Intro
@@ -16,6 +17,18 @@ Worker - A Worker is a single, atomic unit of work. This means that a Worker sim
 Jobs - A Job is a collection of Workers. Multiple Workers work together within a Job to perform a larger operation or task, which is considered the Job.
 
 Schedulers - A Scheduler manages the configuration for a Job and is reponsible for schedueling the inidvidual Workers within a Job.
+
+## Installation
+
+To use Jobs, you need to install Go and set your Go workspace.
+
+1. To install Jobs, you'll need to run this command within your project.
+   
+   `$ go get -u github.com/jake-hansen/jobs`
+
+2. Import jobs in your project
+
+    `import "github.com/jake-hansen/jobs`
 
 ## Example
 
