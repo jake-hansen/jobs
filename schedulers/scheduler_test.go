@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -44,7 +45,7 @@ func TestScheduler_Schedule(t *testing.T) {
 		testScheduler.WaitForWorkers()
 
 		assert.NoError(t, err)
-		assert.Equal(t, len(*testWorkers)*5, consumer.Sum)
+		assert.Equal(t, len(*testWorkers)*5, consumer.safeSumRead())
 	})
 
 	t.Run("failure-multiple-job", func(t *testing.T) {
@@ -92,16 +93,29 @@ func (i integerWorker) GetPriority() interface{} {
 }
 
 type additionConsumer struct {
+	mu  sync.Mutex
 	Sum int
 }
 
-func (a *additionConsumer) sum(value int) {
+// safeSumRead is a thread safe implementation to read the Sum
+// variable.
+func (a *additionConsumer) safeSumRead() int {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.Sum
+}
+
+// safeSumWrite() is a thread safe implementation to write the Sum
+// variable.
+func (a *additionConsumer) safeSumWrite(value int) {
+	a.mu.Lock()
 	a.Sum += value
+	defer a.mu.Unlock()
 }
 
 func (a *additionConsumer) Consume(data interface{}) {
 	integer, ok := data.(int)
 	if ok {
-		a.sum(integer)
+		a.safeSumWrite(integer)
 	}
 }

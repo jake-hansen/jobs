@@ -21,6 +21,7 @@ type Scheduler struct {
 	ErrorConsumer consumers.ErrorConsumer
 	Algorithm     SchedulerAlgorithm
 	jobInProgress bool
+	jobSync       sync.Mutex
 	Debug         bool
 }
 
@@ -82,9 +83,9 @@ func (s SequentialScheduler) Schedule(workers *[]jobs.Worker) *[]jobs.Worker {
 // Schedule manages running a Job. When executed, Schedule begins spawning Workers as picked by the SchedulerAlgorithm.
 func (s *Scheduler) Schedule(job *jobs.Job) error {
 	if job != nil {
-		if !s.jobInProgress {
+		if !s.safeReadJobInProgress() {
 			s.waitGroup = new(sync.WaitGroup)
-			s.jobInProgress = true
+			s.safeSetJobInProgress(true)
 			s.dataChannel = make(chan interface{})
 			s.errorChannel = make(chan error)
 
@@ -124,7 +125,7 @@ func (s *Scheduler) cleanup() {
 	s.waitGroup.Wait()
 	close(s.dataChannel)
 	close(s.errorChannel)
-	s.jobInProgress = false
+	s.safeSetJobInProgress(false)
 }
 
 // WaitForWorkers blocks until all Workers have finished processing.
@@ -132,4 +133,20 @@ func (s *Scheduler) WaitForWorkers() {
 	if s.waitGroup != nil {
 		s.waitGroup.Wait()
 	}
+}
+
+// safeSetJobInProgress is a thread safe implementation to set the jobInProgress
+// variable.
+func (s *Scheduler) safeSetJobInProgress(jobInProgress bool) {
+	s.jobSync.Lock()
+	s.jobInProgress = jobInProgress
+	s.jobSync.Unlock()
+}
+
+// safeReadJobInProgress is a thread safe implementation to read the jobInProgress
+// variable.
+func (s *Scheduler) safeReadJobInProgress() bool {
+	s.jobSync.Lock()
+	defer s.jobSync.Unlock()
+	return s.jobInProgress
 }
