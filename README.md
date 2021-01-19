@@ -1,5 +1,6 @@
 # Jobs
 [![Build Status](https://travis-ci.com/jake-hansen/jobs.svg?branch=main)](https://travis-ci.com/jake-hansen/jobs)
+[![codecov](https://codecov.io/gh/jake-hansen/jobs/branch/main/graph/badge.svg?token=H30TXI2OBA)](https://codecov.io/gh/jake-hansen/jobs)
 ![GitHub](https://img.shields.io/github/license/jake-hansen/jobs)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jake-hansen/jobs)](https://goreportcard.com/report/github.com/jake-hansen/jobs)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/jake-hansen/jobs)
