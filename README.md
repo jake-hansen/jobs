@@ -94,7 +94,7 @@ Now that we have the ability to generate an arbitrary amount of PiWorkers, we ca
 
 Here, we've created a variable and stored a new Job. The magic here is that we've stored *1000* different PiWorkers inside our Job.
 
-```
+```go
 calculatePi := jobs.NewJob("monte carlo pi approximation", createPiWorkers(1000))
 ```
 
