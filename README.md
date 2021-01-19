@@ -1,6 +1,14 @@
 # Jobs
 Jobs is a simple asynchronous job scheduling library for Go. Jobs works by abstracting goroutines to a simple yet highly configurable job scheduling API. 
 
+## Contents
+- [Jobs](#jobs)
+  - [Contents](#contents)
+  - [Intro](#intro)
+  - [Example](#example)
+
+## Intro
+
 There are three main components to the Jobs library: Workers, Jobs, and Schedulers.
 
 Worker - A Worker is a single, atomic unit of work. This means that a Worker simply performs a task or operation.
@@ -99,7 +107,7 @@ Once we've created our Consumer, we can finally schedule our Job! Let's do that 
 
 Here, we create a DefaultScheduler. We then set the consumer of that scheduler to be the consumer we just defined above. Finally, we schedule our job with the line `piScheduler.Schedule(calculatePi)`.
 
-In order to make sure our program doesn't exit until the last worker thread finishes, we need to make the call `piScheduler.WaitForWorkers()`, which blocks until the last worker returns.
+In order to make sure our program doesn't exit until the last worker thread finishes, we need to make the call `piScheduler.WaitForWorkers()`, which blocks until the last Worker returns.
 
 Finally, we print the Pi approximation stored in our consumer.
 
@@ -114,11 +122,6 @@ piScheduler.WaitForWorkers()
 fmt.Println(piConsumer.Pi)
 ```
 
-`3.1425916543395447`
+Now we have the result `3.1425916543395447`. If we run the scheduler again, this time with *1000000* Workers, we get a value of `3.1415936535887727`. As you can see as the number of Worker threads increase, so does the accuracy of our Pi approximation.
 
-
-
-
-
-
-
+This example should have provided you a better understanding of the Jobs library. Clearly, the Monte Carlo Pi approximation as shown [here](https://golang.org/doc/play/pi.go) appears to be much simpler than the example that was just demonstrated. Keep in mind that this demo was just an example. The Jobs library has rich functionality built in such as defining priority for tasks and custom scheduling algorithms. The Monte Carlo Pi approximation algorithm did not take advantage of these features.
