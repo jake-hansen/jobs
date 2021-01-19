@@ -4,17 +4,22 @@
 package jobs_test
 
 import (
+	"github.com/jake-hansen/jobs"
 	"testing"
 
-	"github.com/jake-hansen/jobs/jobs"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewJob(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		testJobName := "test job"
+		var task jobs.Task = new(myTask)
 
-		worker := &testWorker{}
+		worker := jobs.Worker{
+			Task:     &task,
+			Name:     "test worker",
+			Priority: nil,
+		}
 
 		var workers []jobs.Worker
 		workers = append(workers, worker)
@@ -26,16 +31,9 @@ func TestNewJob(t *testing.T) {
 	})
 }
 
-type testWorker struct{}
+type myTask struct{}
 
-func (t testWorker) Run() (interface{}, error) {
-	return nil, nil
+func (t myTask) Run() (interface{}, error) {
+	panic("implement me")
 }
 
-func (t testWorker) WorkerName() string {
-	return "test worker"
-}
-
-func (t testWorker) GetPriority() interface{} {
-	return 0
-}
