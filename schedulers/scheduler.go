@@ -17,6 +17,7 @@ type Scheduler struct {
 	ErrorConsumer consumers.ErrorConsumer
 	Algorithm     SchedulerAlgorithm
 	jobInProgress bool
+	Debug		bool
 }
 
 // DefaultScheduler creates a Scheduler with a DataPrinterConsumer and ErrorPrinterConsumer. It also includes the
@@ -29,19 +30,24 @@ func DefaultScheduler() *Scheduler {
 		DataConsumer:  consumers.DataPrinterConsumer{},
 		ErrorConsumer: consumers.ErrorPrinterConsumer{},
 		Algorithm:     SequentialScheduler{},
+		Debug: false,
 	}
 
 	return scheduler
 }
 
 // runWorker manages running a Worker and passes the Worker's return value and error to the appropriate channel.
-func runWorker(worker jobs.Worker, dataChannel chan interface{}, errorChannel chan error, wg *sync.WaitGroup) {
-	fmt.Printf("[DEBUG] starting worker %s\n", worker.WorkerName())
+func runWorker(worker jobs.Worker, dataChannel chan interface{}, errorChannel chan error, wg *sync.WaitGroup, debug bool) {
+	if debug {
+		fmt.Printf("[DEBUG] starting worker %s\n", worker.WorkerName())
+	}
 	defer wg.Done()
 	val, err := worker.Run()
 	dataChannel <- val
 	errorChannel <- err
-	fmt.Printf("[DEBUG] ended worker %s\n", worker.WorkerName())
+	if debug {
+		fmt.Printf("[DEBUG] ended worker %s\n", worker.WorkerName())
+	}
 
 }
 
@@ -80,7 +86,7 @@ func (s *Scheduler) Schedule(job *jobs.Job) error {
 
 			for _, worker := range *s.Algorithm.Schedule(job.Workers) {
 				s.waitGroup.Add(1)
-				go runWorker(worker, s.dataChannel, s.errorChannel, s.waitGroup)
+				go runWorker(worker, s.dataChannel, s.errorChannel, s.waitGroup, s.Debug)
 			}
 
 			go s.consumeData()
