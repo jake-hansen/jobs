@@ -11,8 +11,8 @@ import (
 
 // Scheduler manages scheduling and syncing Workers for a Job.
 type Scheduler struct {
-	Algorithm         SchedulerAlgorithm
-	Debug             bool
+	Algorithm SchedulerAlgorithm
+	Debug     bool
 }
 
 // DefaultScheduler creates a Scheduler with a DataPrinterConsumer and ErrorPrinterConsumer. It also includes the
@@ -71,8 +71,8 @@ func (s *Scheduler) SubmitJob(job *Job) error {
 		job.inProgress.SafeSet(true)
 
 		for _, worker := range *s.Algorithm.Schedule(job.Workers) {
-			job.waitGroup.Add(1)
-			go spawnWorker(worker, job.dataChannel, job.errorChannel, job.waitGroup, s.Debug)
+			job.workerWaitGroup.Add(1)
+			go spawnWorker(worker, job.dataChannel, job.errorChannel, job.workerWaitGroup, s.Debug)
 		}
 
 		go job.consumeData()

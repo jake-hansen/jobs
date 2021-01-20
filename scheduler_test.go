@@ -5,12 +5,13 @@ package jobs_test
 
 import (
 	"fmt"
-	"github.com/jake-hansen/jobs"
 	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jake-hansen/jobs"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -43,7 +44,7 @@ func TestScheduler_Schedule(t *testing.T) {
 		consumer := additionConsumer{Sum: 0}
 		testJob.DataConsumer = &consumer
 		err := testScheduler.SubmitJob(testJob)
-		testJob.WaitForWorkers()
+		testJob.Wait()
 
 		assert.NoError(t, err)
 		assert.Equal(t, len(*testWorkers)*5, consumer.safeSumRead())
@@ -84,8 +85,8 @@ func (a *additionConsumer) safeSumRead() int {
 // variable.
 func (a *additionConsumer) safeSumWrite(value int) {
 	a.mu.Lock()
-	a.Sum += value
 	defer a.mu.Unlock()
+	a.Sum += value
 }
 
 func (a *additionConsumer) Consume(data interface{}) {

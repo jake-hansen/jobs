@@ -4,35 +4,39 @@
 package jobs
 
 import (
+	"sync"
+
 	"github.com/jake-hansen/jobs/consumers"
 	"github.com/jake-hansen/jobs/utils"
-	"sync"
 )
 
 // Job represents a collection of workers that need to be scheduled.
 type Job struct {
-	Name          string
-	Workers       *[]Worker
-	DataConsumer  consumers.DataConsumer
-	ErrorConsumer consumers.ErrorConsumer
-	dataChannel   chan interface{}
-	errorChannel  chan error
-	waitGroup     *sync.WaitGroup
-	inProgress	  utils.AtomicBool
+	Name            string
+	Workers         *[]Worker
+	DataConsumer    consumers.DataConsumer
+	ErrorConsumer   consumers.ErrorConsumer
+	dataChannel     chan interface{}
+	errorChannel    chan error
+	workerWaitGroup *sync.WaitGroup
+	jobWaitGroup    *sync.WaitGroup
+	inProgress      utils.AtomicBool
 }
 
 // NewJob creates a new job with the given name and given workers.
 func NewJob(name string, workers *[]Worker) *Job {
 	job := &Job{
-		Name:          name,
-		Workers:       workers,
-		DataConsumer:  consumers.DataPrinterConsumer{},
-		ErrorConsumer: consumers.ErrorPrinterConsumer{},
-		dataChannel:   make(chan interface{}),
-		errorChannel:  make(chan error),
-		waitGroup: 	   new(sync.WaitGroup),
-		inProgress:    utils.NewAtomicBool(false),
+		Name:            name,
+		Workers:         workers,
+		DataConsumer:    consumers.DataPrinterConsumer{},
+		ErrorConsumer:   consumers.ErrorPrinterConsumer{},
+		dataChannel:     make(chan interface{}),
+		errorChannel:    make(chan error),
+		workerWaitGroup: new(sync.WaitGroup),
+		jobWaitGroup:    new(sync.WaitGroup),
+		inProgress:      utils.NewAtomicBool(false),
 	}
+	job.jobWaitGroup.Add(1)
 	return job
 }
 
@@ -41,6 +45,7 @@ func (j *Job) consumeData() {
 	for val := range j.dataChannel {
 		j.DataConsumer.Consume(val)
 	}
+	defer j.jobWaitGroup.Done()
 }
 
 // consumeErrors consumes the errors channel for a Job.
@@ -50,16 +55,24 @@ func (j *Job) consumeErrors() {
 	}
 }
 
-// WaitForWorkers blocks until all Workers have finished processing.
-func (j *Job) WaitForWorkers() {
-	if j.waitGroup != nil {
-		j.waitGroup.Wait()
+// waitForWorkers blocks until all Workers have finished executing.
+func (j *Job) waitForWorkers() {
+	if j.workerWaitGroup != nil {
+		j.workerWaitGroup.Wait()
+	}
+}
+
+// Wait blocks until the all the Job's Workers have finished executing and every data has been consumed by the
+// DataConsumer.
+func (j *Job) Wait() {
+	if j.jobWaitGroup != nil {
+		j.jobWaitGroup.Wait()
 	}
 }
 
 // cleanup waits for all Workers to finish before closing the data and error channels.
 func (j *Job) cleanup(job *Job) {
-	job.waitGroup.Wait()
+	j.waitForWorkers()
 	close(job.dataChannel)
 	close(job.errorChannel)
 	job.inProgress.SafeSet(false)

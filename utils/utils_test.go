@@ -4,9 +4,10 @@
 package utils_test
 
 import (
+	"testing"
+
 	"github.com/jake-hansen/jobs/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewAtomicBool(t *testing.T) {
@@ -41,6 +42,3 @@ func TestAtomicBool_SafeGet(t *testing.T) {
 		assert.Equal(t, false, atomicBool.SafeGet())
 	})
 }
-
-
-

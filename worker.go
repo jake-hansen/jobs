@@ -9,9 +9,10 @@ type Worker struct {
 	Task     *Task
 	Name     string
 	Priority interface{}
-	complete	bool
+	complete bool
 }
 
+// NewWorker creates a new Worker with the specified properties.
 func NewWorker(task *Task, name string, priority interface{}) *Worker {
 	worker := &Worker{
 		Task:     task,
