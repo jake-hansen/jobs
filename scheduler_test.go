@@ -43,29 +43,15 @@ func TestScheduler_Schedule(t *testing.T) {
 		consumer := additionConsumer{Sum: 0}
 		testJob.DataConsumer = &consumer
 		err := testScheduler.SubmitJob(testJob)
-		testScheduler.WaitForWorkers()
+		testJob.WaitForWorkers()
 
 		assert.NoError(t, err)
 		assert.Equal(t, len(*testWorkers)*5, consumer.safeSumRead())
 	})
 
-	t.Run("failure-multiple-job", func(t *testing.T) {
-		testWorkers := spawnWorkers()
-
-		testJob := jobs.NewJob("test job", testWorkers)
-		testScheduler := jobs.DefaultScheduler()
-		consumer := additionConsumer{Sum: 0}
-		testJob.DataConsumer = &consumer
-		err := testScheduler.SubmitJob(testJob)
-		assert.NoError(t, err)
-		err = testScheduler.SubmitJob(testJob)
-		assert.Error(t, err)
-	})
-
 	t.Run("failure-nil-job", func(t *testing.T) {
 		testScheduler := jobs.DefaultScheduler()
 		err := testScheduler.SubmitJob(nil)
-		testScheduler.WaitForWorkers()
 
 		assert.Error(t, err)
 	})

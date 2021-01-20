@@ -11,10 +11,7 @@ import (
 
 // Scheduler manages scheduling and syncing Workers for a Job.
 type Scheduler struct {
-	waitGroup         *sync.WaitGroup
 	Algorithm         SchedulerAlgorithm
-	jobInProgress     bool
-	jobInProgressSync sync.Mutex
 	Debug             bool
 }
 
@@ -22,7 +19,6 @@ type Scheduler struct {
 // SequentialScheduler as the scheduling algorithm.
 func DefaultScheduler() *Scheduler {
 	scheduler := &Scheduler{
-		waitGroup: nil,
 		Algorithm: SequentialScheduler{},
 		Debug:     false,
 	}
@@ -72,54 +68,18 @@ func (s SequentialScheduler) Schedule(workers *[]Worker) *[]Worker {
 // SubmitJob manages running a Job. When executed, SubmitJob begins spawning Workers as picked by the SchedulerAlgorithm.
 func (s *Scheduler) SubmitJob(job *Job) error {
 	if job != nil {
-		if !s.safeReadJobInProgress() {
-			s.waitGroup = new(sync.WaitGroup)
-			s.safeSetJobInProgress(true)
+		job.inProgress.SafeSet(true)
 
-			for _, worker := range *s.Algorithm.Schedule(job.Workers) {
-				s.waitGroup.Add(1)
-				go spawnWorker(worker, job.dataChannel, job.errorChannel, s.waitGroup, s.Debug)
-			}
-
-			go job.consumeData()
-			go job.consumeErrors()
-			go s.cleanup(job)
-		} else {
-			return fmt.Errorf("scheduler: cannot schedule job [%s]. A job already in progress", job.Name)
+		for _, worker := range *s.Algorithm.Schedule(job.Workers) {
+			job.waitGroup.Add(1)
+			go spawnWorker(worker, job.dataChannel, job.errorChannel, job.waitGroup, s.Debug)
 		}
+
+		go job.consumeData()
+		go job.consumeErrors()
+		go job.cleanup(job)
 	} else {
 		return errors.New("scheduler: job cannot be nil")
 	}
 	return nil
-}
-
-// cleanup waits for all Workers to finish before closing the data and error channels.
-func (s *Scheduler) cleanup(job *Job) {
-	s.waitGroup.Wait()
-	close(job.dataChannel)
-	close(job.errorChannel)
-	s.safeSetJobInProgress(false)
-}
-
-// WaitForWorkers blocks until all Workers have finished processing.
-func (s *Scheduler) WaitForWorkers() {
-	if s.waitGroup != nil {
-		s.waitGroup.Wait()
-	}
-}
-
-// safeSetJobInProgress is a thread safe implementation to set the jobInProgress
-// variable.
-func (s *Scheduler) safeSetJobInProgress(jobInProgress bool) {
-	s.jobInProgressSync.Lock()
-	s.jobInProgress = jobInProgress
-	s.jobInProgressSync.Unlock()
-}
-
-// safeReadJobInProgress is a thread safe implementation to read the jobInProgress
-// variable.
-func (s *Scheduler) safeReadJobInProgress() bool {
-	s.jobInProgressSync.Lock()
-	defer s.jobInProgressSync.Unlock()
-	return s.jobInProgress
 }
