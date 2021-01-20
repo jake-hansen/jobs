@@ -53,63 +53,49 @@ TL;DR - If you perform a certain calculation enough times and sum the result of 
 
 Let's get started.
 
-We'll first start by defining our **Worker**.
+We'll first start by defining the **Task**  which will ultimately be used for our **Worker**. A Worker contains a Task and other metadata. A Task has a single function, `Run()`.  Our MonteCarloCalc struct is an implementation of a Task.
 
-Our PiWorker is an implementation of a Worker. You'll see some helper functions below such as `WorkerName()` and `GetPriority()`. These functions are useful in other contexts of the Jobs library and are not necessary to understand for this example.
-
-Where the magic happens is in the `Run()` function. You'll see that the function takes no parameters, but performs the Monte Carlo calculation using a k value which is provided in the struct.
+You'll see that the `Run()` function takes no parameters, but performs the Monte Carlo calculation using a k value which is provided in the struct.
 
 ```go
-type PiWorker struct {
-	Name        string
-	Priority    int
-	KVal	    float64
+type MonteCarloCalc struct {
+	KVal	float64
 }
 
-func (p PiWorker) Run() (interface{}, error) {
-	return 4 * math.Pow(-1, p.KVal) / (2 * p.KVal + 1), nil
-}
-
-func (p PiWorker) WorkerName() string {
-	return p.Name
-}
-
-func (p PiWorker) GetPriority() interface{} {
-	return p.Priority
+func (m *MonteCarloCalc) Run() (interface{}, error) {
+	return 4 * math.Pow(-1, m.KVal) / (2 * m.KVal + 1), nil
 }
 ```
 
-PiWorker, by itself, is not very useful. Sure, we can create a new PiWorker and execute the function `Run()`. However, we wouldn't get a very accurate approximation of Pi. In order to get a more accurate approximation of Pi, as explained above, we need to perform the calculation that `Run()` provides multiple times using different k values, and then sum the results together. Jobs to the rescue!
+MonteCarloCalc, by itself, is not very useful. Sure, we can create a new MonteCarloCalc and execute the function `Run()`; however, we wouldn't get a very accurate approximation of Pi. In order to get a more accurate approximation of Pi, as explained above, we need to perform the calculation that `Run()` provides multiple times using different k values, and then sum the results together. This is where Workers comes in.
 
-The next thing we need to do is define a Job. Remember that a Job is a *collection* of workers. So we will first need a collection of our PiWorkers. To do this, we'll create a helper function. This helper function will take a paramter, `n`, and return a slice of that many PiWorkers. Note that each PiWorker takes on a unique `KVal`. 
+We need a way to create multiple Workers that contain the MonteCarloCalc task, all with different k-values. To do this, we'll create a simple helper function.
 
 ```go
 func createPiWorkers(n int) *[]jobs.Worker {
 	var piSlice []jobs.Worker
 	for i := 0; i <= n; i++ {
-		piSlice = append(piSlice, piWorker{
-			Name:     "piworker",
-			Priority: 0,
-			KVal:     float64(i),
-		})
+		var mc jobs.Task = &MonteCarloCalc{KVal: float64(i)}
+		var worker *jobs.Worker = jobs.NewWorker(&mc, "piworker", nil)
+		piSlice = append(piSlice, *worker)
 	}
 	return &piSlice
 }
 ```
 
-Now that we have the ability to generate an arbitrary amount of PiWorkers, we can create our Job.
-
-Here, we've created a variable and stored a new Job. The magic here is that we've stored *1000* different PiWorkers inside our Job.
+Now that we have the ability to generate an arbitrary amount of Workers that contain our MonteCarloCalc task, we can create our Job.
 
 ```go
-calculatePi := jobs.NewJob("monte carlo pi approximation", createPiWorkers(1000))
+calculatePiJob := jobs.NewJob("monte carlo pi approximation", createPiWorkers(1000))
 ```
+
+Here, we've created a variable and stored a new Job. The magic here is that we've stored *1000* different Workers inside our Job.
 
 Now that we have our Job definition created, we need to schedule the workers within this Job to actually execute.
 
 "But, wait!" you say, "I thought we needed to add up the individual calculations together." You are correct. Here is how we do that.
 
-Jobs has the concept of a `DataConsumer`. A DataConsumer takes the result of a Woker and does *something* with that result. Let's go ahead and define a DataConsumer that will work for our use case.
+Jobs has the concept of a `DataConsumer`. A DataConsumer takes the result of a Worker and does *something* with that result. Let's go ahead and define a DataConsumer that will work for our use case.
 
 PiAddition, implements the DataConsumer interface by defining a function `Consume(data interface{})`.
 
@@ -129,19 +115,25 @@ func (p *PiAddition) Consume(data interface{}) {
 
 Once we've created our Consumer, we can finally schedule our Job! Let's do that below.
 
-Here, we create a DefaultScheduler. We then set the consumer of that scheduler to be the consumer we just defined above. Finally, we schedule our job with the line `piScheduler.Schedule(calculatePi)`.
+First, we create a new Job, `calculatePiJob` which contains 1000 Workers that will execute the MonteCarloCalc task. We also set the Job to consume the results from our Task using our piAddition consumer.
 
-In order to make sure our program doesn't exit until the last worker thread finishes, we need to make the call `piScheduler.WaitForWorkers()`, which blocks until the last Worker returns.
+Next, we submit our job with the Default Scheduler, which will execute all of our Workers simultaneously. 
+
+In order to make sure our program doesn't exit until the last worker thread finishes, we need to make the call `calculatePiJob.Wait()`, which blocks until the last Worker returns.
 
 Finally, we print the Pi approximation stored in our consumer.
 
 ```go
-piScheduler := schedulers.DefaultScheduler()
+calculatePiJob := jobs.NewJob("monte carlo pi approximation", createPiWorkers(1000))
 piConsumer := piAddition{Pi: 0}
-piScheduler.DataConsumer = &piConsumer
-_ = piScheduler.Schedule(calculatePi)
+calculatePiJob.DataConsumer = &piConsumer
 
-piScheduler.WaitForWorkers()
+err := jobs.DefaultScheduler().SubmitJob(calculatePiJob)
+if err != nil {
+	panic(err.Error)
+}
+
+calculatePiJob.Wait()
 
 fmt.Println(piConsumer.Pi)
 ```
