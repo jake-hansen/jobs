@@ -4,6 +4,7 @@
 package jobs_test
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -41,13 +42,14 @@ func TestScheduler_Schedule(t *testing.T) {
 
 		testJob := jobs.NewJob("test job", testWorkers)
 		testScheduler := jobs.DefaultScheduler()
+		testScheduler.Debug = true
 		consumer := additionConsumer{Sum: 0}
 		testJob.DataConsumer = &consumer
 		err := testScheduler.SubmitJob(testJob)
 		testJob.Wait()
 
 		assert.NoError(t, err)
-		assert.Equal(t, len(*testWorkers)*5, consumer.safeSumRead())
+		assert.Equal(t, len(*testWorkers)*5, consumer.Sum)
 	})
 
 	t.Run("failure-nil-job", func(t *testing.T) {
@@ -55,6 +57,22 @@ func TestScheduler_Schedule(t *testing.T) {
 		err := testScheduler.SubmitJob(nil)
 
 		assert.Error(t, err)
+	})
+
+	t.Run("job-with-worker-errors", func(t *testing.T) {
+		var task jobs.Task = &errTask{}
+		errWorker := jobs.NewWorker(&task, "test worker", nil)
+		errWorkers := make([]jobs.Worker, 0)
+		errWorkers = append(errWorkers, *errWorker)
+		job := jobs.NewJob("test job", &errWorkers)
+		consumer := &errConsumer{}
+		job.ErrorConsumer = consumer
+		err := jobs.DefaultScheduler().SubmitJob(job)
+
+		job.Wait()
+
+		assert.NoError(t, err)
+		assert.Error(t, consumer.err)
 	})
 }
 
@@ -73,25 +91,22 @@ type additionConsumer struct {
 	Sum int
 }
 
-// safeSumRead is a thread safe implementation to read the Sum
-// variable.
-func (a *additionConsumer) safeSumRead() int {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.Sum
-}
-
-// safeSumWrite() is a thread safe implementation to write the Sum
-// variable.
-func (a *additionConsumer) safeSumWrite(value int) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.Sum += value
-}
-
 func (a *additionConsumer) Consume(data interface{}) {
 	integer, ok := data.(int)
 	if ok {
-		a.safeSumWrite(integer)
+		a.Sum += integer
 	}
+}
+
+type errTask struct {}
+type errConsumer struct {
+	err error
+}
+
+func (e errTask) Run() (interface{}, error) {
+	return nil, errors.New("test error")
+}
+
+func (e *errConsumer) Consume(err error) {
+	e.err = err
 }

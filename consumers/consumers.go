@@ -29,6 +29,6 @@ func (d DataPrinterConsumer) Consume(i interface{}) {
 // Consume consumes an error by printing it.
 func (e ErrorPrinterConsumer) Consume(err error) {
 	if err != nil {
-		fmt.Printf("worker error: %s", err.Error())
+		fmt.Printf("worker error: %s\n", err.Error())
 	}
 }

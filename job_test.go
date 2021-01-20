@@ -4,6 +4,7 @@
 package jobs_test
 
 import (
+	"github.com/jake-hansen/jobs/consumers"
 	"testing"
 
 	"github.com/jake-hansen/jobs"
@@ -25,6 +26,8 @@ func TestNewJob(t *testing.T) {
 
 		assert.Equal(t, testJobName, job.Name)
 		assert.Equal(t, &workers, job.Workers)
+		assert.Equal(t, consumers.DataPrinterConsumer{}, job.DataConsumer)
+		assert.Equal(t, consumers.ErrorPrinterConsumer{}, job.ErrorConsumer)
 	})
 }
 
