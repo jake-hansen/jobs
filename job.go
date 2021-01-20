@@ -36,7 +36,7 @@ func NewJob(name string, workers *[]Worker) *Job {
 		jobWaitGroup:    new(sync.WaitGroup),
 		inProgress:      utils.NewAtomicBool(false),
 	}
-	job.jobWaitGroup.Add(1)
+	job.jobWaitGroup.Add(2)
 	return job
 }
 
@@ -53,6 +53,7 @@ func (j *Job) consumeErrors() {
 	for err := range j.errorChannel {
 		j.ErrorConsumer.Consume(err)
 	}
+	defer j.jobWaitGroup.Done()
 }
 
 // waitForWorkers blocks until all Workers have finished executing.

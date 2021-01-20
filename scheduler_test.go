@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
-	"sync"
 	"testing"
 	"time"
 
@@ -65,8 +64,8 @@ func TestScheduler_Schedule(t *testing.T) {
 		errWorkers := make([]jobs.Worker, 0)
 		errWorkers = append(errWorkers, *errWorker)
 		job := jobs.NewJob("test job", &errWorkers)
-		consumer := &errConsumer{}
-		job.ErrorConsumer = consumer
+		consumer := errConsumer{}
+		job.ErrorConsumer = &consumer
 		err := jobs.DefaultScheduler().SubmitJob(job)
 
 		job.Wait()
@@ -87,7 +86,6 @@ func (i integerTask) Run() (interface{}, error) {
 }
 
 type additionConsumer struct {
-	mu  sync.Mutex
 	Sum int
 }
 
@@ -99,12 +97,13 @@ func (a *additionConsumer) Consume(data interface{}) {
 }
 
 type errTask struct {}
-type errConsumer struct {
-	err error
-}
 
 func (e errTask) Run() (interface{}, error) {
 	return nil, errors.New("test error")
+}
+
+type errConsumer struct {
+	err error
 }
 
 func (e *errConsumer) Consume(err error) {
